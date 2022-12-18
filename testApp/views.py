@@ -59,8 +59,12 @@ class TovarApiView(APIView):
         iddoc = request.data['iddoc']
         checks = Tovars.objects.filter(iddoc=iddoc)
 
-        checks_dict = []
+        #Проверка
+        if not checks:
+            return Response({"recommendations": "Неправильно введен ID чека!"})
 
+
+        checks_dict = []
         # Добавляем данные из БД в словарь
         for check in checks:
             checks_dict.append({
@@ -81,14 +85,25 @@ class TovarApiView(APIView):
         recommended = []
         tryes = 0
 
+
+        # При ошибке пытаемся 3 раза, потом сдаемся
         while not recommended:
+            if tryes > 3:
+                recommended = None
+                break
             recommending = recommendation.Recommendation()
             recommended = recommending.get_recommendations(check)
             tryes += 1
-            print(f"Try {tryes}")
-        
-        for tovar in recommended:
-            tovar["name"] = tovar["name"].replace("  ", '')
+
+
+
+        if recommended:
+            for tovar in recommended:
+                tovar["name"] = tovar["name"].replace("  ", '')
+            print("Mission completed!")
+        else:
+            recommended = "Unknown error. Try again"
+
 
         return Response({"recommendations": recommended})
 
