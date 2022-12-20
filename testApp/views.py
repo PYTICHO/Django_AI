@@ -56,27 +56,19 @@ class TovarApiView(APIView):
         return Response({"Error": "Only POST"})
 
     def post(self, request):
-        iddoc = request.data['iddoc']
-        checks = Tovars.objects.filter(iddoc=iddoc)
+        checks_dict = request.data['tovars']
 
         #Проверка
-        if not checks:
-            return Response({"recommendations": "Неправильно введен ID чека!"})
+        if not checks_dict:
+            return Response({"recommendations": "Не получаю нормальный JSON!"})
 
-
-        checks_dict = []
-        # Добавляем данные из БД в словарь
-        for check in checks:
-            checks_dict.append({
-                "iddoc": check.iddoc,
-                "kolvo": check.kolvo,
-                "summa": check.summa
-            })
 
         checks = pd.DataFrame(checks_dict) 
+        id_tovars = pd.DataFrame(checks["idtov"], columns=["idtov"])
+        checks.drop(columns=["idtov"])
 
         group_by_iddoc = checks.groupby(['iddoc'])
-        check = group_by_iddoc.sum() 
+        check = group_by_iddoc.sum(numeric_only=True) 
         check['count_uniq_good'] = group_by_iddoc.size()
         check.index.name = None
 
@@ -92,7 +84,7 @@ class TovarApiView(APIView):
                 recommended = None
                 break
             recommending = recommendation.Recommendation()
-            recommended = recommending.get_recommendations(check)
+            recommended = recommending.get_recommendations(check, id_tovars)
             tryes += 1
 
 
@@ -102,7 +94,7 @@ class TovarApiView(APIView):
                 tovar["name"] = tovar["name"].replace("  ", '')
             print("Mission completed!")
         else:
-            recommended = "Unknown error. Try again"
+            recommended = "Непонятная ошибка! Проверьте входные данные! Либо товар непопулярен"
 
 
         return Response({"recommendations": recommended})

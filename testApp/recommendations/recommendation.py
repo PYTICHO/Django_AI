@@ -81,35 +81,49 @@ class Recommendation:
 
 
     # Получаем pandas таблицу с чеком (kolvo, summa, count_uniq_good)
-    def get_recommendations(self, check):
+    def get_recommendations(self, check, id_tovars):
         model = self.model
         trainDF = self.trainDF
         data = self.data
         names = self.names
 
 
-
         a = []
         for index, t in check.iterrows():
             closest = model.predict(np.array([t.values])) #получаем номер кластера тестового чека
 
-
+            stop = False
             # Если в a не будет схожих товаров, то берем  кластер +- 1 
             for i in range(1,5):
-                for j in [-1, 1]:
-                    similar_checks = pd.DataFrame(trainDF[trainDF['predicted']==closest[0]]) #Все чеки с таким же кластером
-                    check_content = pd.DataFrame(data[data["iddoc"]==index]) #Все товары тестового чека
+                if not stop:
+                    for j in [-1, 1]:
+                        similar_checks = pd.DataFrame(trainDF[trainDF['predicted']==closest[0]]) #Все чеки с таким же кластером
+                        check_content = id_tovars #Все товары тестового чека
 
-                    #получить все товары из чеков с таким же кластером
-                    train_tov = pd.DataFrame(data[data['iddoc'].isin(similar_checks.index.values)])
-                    for check_index, tovar in check_content.iterrows():
-                        #отбираем все товары (из чеков с таким же кластером) у которых есть товары, как в тестовом чеке
-                        a.append(train_tov[train_tov['idtov'] == tovar['idtov']])
-                    if a[0].empty:
-                        closest += (i*j)
-                        a = []
+                        #получить все товары из чеков с таким же кластером
+                        train_tov = pd.DataFrame(data[data['iddoc'].isin(similar_checks.index.values)])
+
+                        for check_index, tovar in check_content.iterrows():
+                            #отбираем все товары (из чеков с таким же кластером) у которых есть товары, как в тестовом чеке
+                            a.append(train_tov[train_tov['idtov'] == tovar['idtov']])
+
+                        try:
+                            if a[0].empty:
+                                closest += (i*j)
+                                a = []
+                            else:
+                                stop = True
+                                break
+                        except:
+                            closest += (i*j)
+                            a = []
+                        
+                else:
+                    break
 
 
+            if len(a) == 0:
+                return None
 
             a = pd.concat(a) #Создаем таблицу
     
@@ -137,7 +151,7 @@ class Recommendation:
         summ = summ.sort_values(by = ['count_good'], ascending=False)
 
         recommended = summ[:25].to_dict('records')
-        
+
         return recommended
 
 
