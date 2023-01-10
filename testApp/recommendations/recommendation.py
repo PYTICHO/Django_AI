@@ -4,33 +4,26 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn import preprocessing
 from sklearn.cluster import DBSCAN
-
+from ..models import *
 
 class Recommendation:
 
-    def __init__(self):
+    def __init__(self, dfStr, names):
         #                                                    Обучение ИИ
         num_clusters = 6
         train_count = 10000
         plotted_point_count = 500
 
 
-        dfStr = pd.read_csv('testApp/recommendations/checks_str.txt', sep='\t')  # Читаем чеки
-        # Читаем доп.инфу по каждому чеку
-        dfTitles = pd.read_csv('testApp/recommendations/checks_titles.txt', sep='\t')
-        # Читаем ID каждого товара
-        names = pd.read_csv('testApp/recommendations/id.txt', sep='\t', names=['idtov', 'name'])
         # Объединение чеков с именами товаров
         data = pd.merge(dfStr, names, on='idtov')
-        # Объединение чеков с доп.инф по ним
-        data = pd.merge(dfTitles, data, on='iddoc')
 
 
         group_by_iddoc = data.groupby(['iddoc'])
         ch = group_by_iddoc.sum(numeric_only=True)
         ch['count_uniq_good'] = group_by_iddoc.size()
 
-        checks = ch.drop(columns=["return", "kassa", "price"])  # Удаляем поля
+        checks = ch  # Удаляем поля (уже нет)
         # Используем только чеки с  >=  3 товарами
         checks = checks[checks['count_uniq_good'] > 2]
         checks = checks[checks['summa'] > 0]  # Используем только чеки с суммой  >  0

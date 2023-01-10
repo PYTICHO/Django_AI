@@ -16,6 +16,26 @@ from .models import *
 
 # Create your views here.
 
+# -------------------------------- CREATING DF WITH DB --------------------------------------------------------------
+pytdfStr = pd.DataFrame(list(Checks.objects.all().values())).drop(columns=["id", "createtime"])
+
+test_dict = []
+for check in Checks.objects.all():
+    for tovar in check.tovars.all():
+        test_dict.append({"iddoc": check.iddoc, "idtov": tovar.idtov})
+test_df = pd.DataFrame(test_dict)
+
+
+
+pytdfStr = pd.merge(pytdfStr, test_df, on = "iddoc")   #for checks
+
+pytnames = pd.DataFrame(list(Tovar.objects.all().values())).drop(columns=["id"]) # for tovars
+
+del test_dict, test_df
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+
 
 class TovarListPagination(PageNumberPagination):
     page_size = 15
@@ -52,6 +72,9 @@ class BookViewSet(viewsets.ModelViewSet):
 
 
 class TovarApiView(APIView):
+    dfStr = pytdfStr
+    names = pytnames
+
     def get(self, request):
         return Response({"Error": "Only POST"})
 
@@ -83,7 +106,7 @@ class TovarApiView(APIView):
             if tryes > 3:
                 recommended = None
                 break
-            recommending = recommendation.Recommendation()
+            recommending = recommendation.Recommendation(dfStr=self.dfStr, names=self.names)
             recommended = recommending.get_recommendations(check, id_tovars)
             tryes += 1
 
@@ -92,7 +115,6 @@ class TovarApiView(APIView):
         if recommended:
             for tovar in recommended:
                 tovar["name"] = tovar["name"].replace("  ", '')
-            print("Mission completed!")
         else:
             recommended = "Непонятная ошибка! Проверьте входные данные! Либо товар непопулярен"
 

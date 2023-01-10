@@ -10,5 +10,5 @@ class BookSerializer(serializers.ModelSerializer):
 
 class TovarSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Tovars
+        model = Tovar
         fields = "__all__"

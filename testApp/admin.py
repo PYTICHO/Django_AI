@@ -4,11 +4,17 @@ from .models import *
 # Register your models here.
 
 
-class TovarsAdmin(admin.ModelAdmin):
-    list_display = ('iddoc', 'kolvo', 'summa', 'name')
+class TovarAdmin(admin.ModelAdmin):
+    list_display = ("idtov",)
+    search_fields = ('iddoc', "name")
+
+
+class ChecksAdmin(admin.ModelAdmin):
+    list_display = ('iddoc',)
     search_fields = ('iddoc',)
 
 
 admin.site.register(Book)
 admin.site.register(Author)
-admin.site.register(Tovars, TovarsAdmin)
+admin.site.register(Checks, ChecksAdmin)
+admin.site.register(Tovar, TovarAdmin)
